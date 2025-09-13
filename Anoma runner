@@ -3,547 +3,217 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Intent Runner — choose your hero</title>
+<title>Anoma Runner</title>
 <style>
-  :root { --bg1:#8fd6ff; --bg2:#66b0e6; --card: rgba(255,255,255,0.06); }
-  html,body { height:100%; margin:0; font-family:Inter,system-ui,Arial,Helvetica,sans-serif; background:linear-gradient(180deg,var(--bg1),var(--bg2)); display:flex; align-items:center; justify-content:center; color:#fff; }
-  #gameWrap { width:420px; max-width:95vw; position:relative; }
-  canvas { display:block; width:100%; height:auto; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.35); background:transparent; }
-  #hud { position:absolute; left:12px; top:12px; display:flex; gap:8px; align-items:center; z-index:4; }
-  .pill { background:rgba(0,0,0,.22); padding:6px 10px; border-radius:10px; font-weight:700; font-size:13px; display:flex; gap:6px; align-items:center; }
-  #controlsMsg { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.16); padding:8px 12px; border-radius:10px; font-size:13px; z-index:4; }
-  button { background:#ffffff22; color:white; border:0; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:700; }
-  #startOverlay, #selectOverlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25)); border-radius:14px; z-index:8; }
-  #startPanel { background:var(--card); padding:18px 18px; border-radius:12px; text-align:center; width:86%; max-width:360px; }
-  #startPanel h1 { margin:0 0 6px 0; font-size:20px; }
-  #charChoices { display:flex; gap:10px; margin-top:12px; justify-content:center; }
-  .charCard { background:rgba(255,255,255,.03); padding:8px; border-radius:10px; width:140px; cursor:pointer; border:2px solid transparent; }
-  .charCard.selected { border-color: rgba(255,255,255,.25); box-shadow: 0 6px 18px rgba(0,0,0,.25) inset; }
-  .charIcon { font-size:40px; text-align:center; margin-bottom:6px; }
-  .muted { opacity:.85; font-size:13px; }
-  small { display:block; opacity:.9; margin-top:6px; }
-  #pauseBtn { position:absolute; right:12px; top:12px; z-index:4; }
-  @media (max-width:420px){ #startPanel{ width:92%; } }
+  html,body { height:100%; margin:0; background:#0c0c0c; font-family:"Segoe UI",sans-serif; }
+  #gameWrap { width:480px; max-width:95vw; margin:auto; position:relative; }
+  canvas { display:block; background: linear-gradient(#6FD1FF, #C1EFFF); border-radius:14px; }
+  #hud { position:absolute; top:10px; left:10px; display:flex; gap:12px; align-items:center; }
+  .pill { background:rgba(0,0,0,.5); padding:6px 10px; border-radius:10px; color:#fff; font-weight:bold; }
+  #pauseBtn { background:#ff3860; border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  #startOverlay { position:absolute; inset:0; background:rgba(0,0,0,0.75); border-radius:14px; display:flex; align-items:center; justify-content:center; }
+  #startPanel { background:#1d1d1d; padding:20px; border-radius:12px; color:#fff; text-align:center; max-width:90%; }
+  #startPanel h1 { margin-top:0; font-size:24px; background: linear-gradient(to right, #ff3860, #ff9f1c); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .char-select { display:flex; justify-content:center; gap:20px; margin:14px 0; }
+  .char { background:#222; padding:10px; border-radius:10px; cursor:pointer; width:100px; }
+  .char.selected { border:2px solid #ff3860; }
+  .char canvas { width:100%; display:block; }
+  button.play { margin-top:12px; background:#4cafef; border:none; padding:10px 20px; color:#fff; font-size:16px; border-radius:8px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div id="gameWrap">
-  <canvas id="game" width="420" height="720"></canvas>
-
+  <canvas id="game" width="480" height="720"></canvas>
   <div id="hud">
     <div class="pill">Score: <span id="score">0</span></div>
-    <div class="pill">INTENTS: <span id="coins">0</span></div>
-    <div class="pill">Speed: <span id="spd">1.00</span>x</div>
+    <div class="pill">Coins: <span id="coins">0</span></div>
+    <div class="pill">Speed: <span id="spd">1.0</span>x</div>
+    <button id="pauseBtn">Pause</button>
   </div>
-  <button id="pauseBtn">Pause</button>
-  <div id="controlsMsg">← → lanes • ↑ jump • ↓ slide • Tap sides on mobile</div>
 
-  <!-- Character selection overlay -->
-  <div id="selectOverlay">
+  <div id="startOverlay">
     <div id="startPanel">
-      <h1>Choose Your Runner</h1>
-      <div class="muted">Pick a character — each has its own play style</div>
-      <div id="charChoices">
-        <div class="charCard selected" data-id="shrimp" id="card-shrimp">
-          <div class="charIcon">🦐</div>
-          <div style="text-align:center;font-weight:800">Cool Shrimp</div>
-          <div style="font-size:12px;margin-top:6px">Fast • agile • lower jump</div>
+      <h1>ANOMA RUNNER</h1>
+      <div>Choose your character:</div>
+      <div class="char-select">
+        <div class="char" id="shrimp">
+          <canvas width="80" height="80"></canvas>
+          <div>Shrimp</div>
         </div>
-        <div class="charCard" data-id="mage" id="card-mage">
-          <div class="charIcon">🧙‍♂️</div>
-          <div style="text-align:center;font-weight:800">Red Mage</div>
-          <div style="font-size:12px;margin-top:6px">Powerful jump • heavier</div>
+        <div class="char" id="mage">
+          <canvas width="80" height="80"></canvas>
+          <div>Red Mage</div>
         </div>
       </div>
-
-      <small style="margin-top:12px">Collect coins labeled <strong>INTENTS</strong> to increase your wallet.</small>
-      <div style="margin-top:12px">
-        <button id="playBtn">Play</button>
-      </div>
+      <button class="play" id="playBtn">Play</button>
     </div>
   </div>
-
 </div>
 
 <script>
-/*
- Intent Runner
- - 3 lanes endless runner
- - Character select between Shrimp and Red Mage
- - Coins are "INTENTS"
- - No copyrighted assets; everything is drawn procedurally / with emoji
-*/
-
-(function(){
-  // Canvas setup
+(() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  // HUD elements
   const scoreEl = document.getElementById('score');
   const coinsEl = document.getElementById('coins');
   const spdEl = document.getElementById('spd');
-  const selectOverlay = document.getElementById('selectOverlay');
-  const playBtn = document.getElementById('playBtn');
   const pauseBtn = document.getElementById('pauseBtn');
-  const cardShrimp = document.getElementById('card-shrimp');
-  const cardMage = document.getElementById('card-mage');
+  const startOverlay = document.getElementById('startOverlay');
+  const playBtn = document.getElementById('playBtn');
 
-  // Game constants
-  const laneCount = 3;
-  const laneX = [W*0.20, W*0.5, W*0.80];
-  const groundY = H - 100;
-  const gravity = 1.0;
-  const baseSpeed = 4.2;
+  // Character selection
+  let selectedChar = "shrimp";
+  document.querySelectorAll('.char').forEach(div => {
+    div.addEventListener('click', () => {
+      document.querySelectorAll('.char').forEach(c=>c.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedChar = div.id;
+    });
+  });
+  document.getElementById('shrimp').classList.add('selected'); // default
+
+  // Mini preview drawings
+  function drawShrimp(ctx){
+    ctx.fillStyle = "#ff6f61";
+    ctx.beginPath(); ctx.ellipse(40,40,25,18,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(52,36,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#000"; ctx.beginPath(); ctx.arc(52,36,2,0,Math.PI*2); ctx.fill();
+  }
+  function drawMage(ctx){
+    ctx.fillStyle = "#ff3860";
+    ctx.fillRect(30,30,20,40);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(32,34,6,6); ctx.fillRect(42,34,6,6);
+    ctx.fillStyle = "#800000";
+    ctx.beginPath(); ctx.moveTo(40,10); ctx.lineTo(60,30); ctx.lineTo(20,30); ctx.closePath(); ctx.fill();
+  }
+  drawShrimp(document.querySelector('#shrimp canvas').getContext('2d'));
+  drawMage(document.querySelector('#mage canvas').getContext('2d'));
 
   // Game state
+  const laneX = [W*0.25, W*0.5, W*0.75];
+  const groundY = H - 100;
   let running = false, paused = false;
-  let gameSpeed = baseSpeed;
-  let score = 0, intents = 0;
-  let frame = 0;
-  let spawnTimer = 0;
-  let spawnInterval = 84;
+  let score=0, coins=0, frame=0;
+  let gameSpeed=4, initSpeed=4;
 
-  // Entities array
-  const entities = []; // each: {type, lane, x, y, w, h, data}
+  const player = { lane:1, x:laneX[1], y:groundY, vy:0, w:50, h:70, state:"run", slideTimer:0 };
+  const entities = [];
 
-  // Player object that will be set after selection
-  let player = {
-    id: 'shrimp',
-    lane: 1,
-    x: laneX[1],
-    y: groundY,
-    w: 48,
-    h: 64,
-    vy: 0,
-    state: 'run', // run, jump, slide
-    slideTimer: 0,
-    stats: {} // will hold jumpPower, speedModifier, etc
-  };
-
-  // Chaser
-  const chaser = { x: player.x - 160, y: groundY, w: 64, h: 88 };
-
-  // Input
-  const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key] = true; });
-  window.addEventListener('keyup', e => { keys[e.key] = false; });
-
-  // Touch controls: tap left/right half to change lanes; swipe up/down to jump/slide
-  let touchStart = null;
-  canvas.addEventListener('touchstart', (ev) => {
-    if (!running) return;
-    const t = ev.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    touchStart = {x: t.clientX - rect.left, y: t.clientY - rect.top, t: Date.now()};
-  });
-  canvas.addEventListener('touchend', (ev) => {
-    if (!running || !touchStart) return;
-    const rect = canvas.getBoundingClientRect();
-    const t = ev.changedTouches[0];
-    const ex = t.clientX - rect.left, ey = t.clientY - rect.top;
-    const dx = ex - touchStart.x, dy = ey - touchStart.y;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
-      if (dx < 0) laneLeft(); else laneRight();
-    } else if (Math.abs(dy) > 30) {
-      if (dy < 0) tryJump(); else trySlide();
-    } else {
-      // tap: left/right halves
-      if (touchStart.x < W/2) laneLeft();
-      else laneRight();
-    }
-    touchStart = null;
-  });
-
-  // Pause button
-  pauseBtn.addEventListener('click', () => {
-    if (!running) return;
-    paused = !paused;
-    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
-  });
-
-  // Character selection handlers
-  let selectedChar = 'shrimp';
-  function selectChar(id) {
-    selectedChar = id;
-    cardShrimp.classList.toggle('selected', id === 'shrimp');
-    cardMage.classList.toggle('selected', id === 'mage');
-  }
-  cardShrimp.addEventListener('click', () => selectChar('shrimp'));
-  cardMage.addEventListener('click', () => selectChar('mage'));
-
-  // Play handler
-  playBtn.addEventListener('click', () => {
-    // configure player stats based on selection
-    if (selectedChar === 'shrimp') {
-      player.id = 'shrimp';
-      player.stats = { jumpPower: 13.5, speedMultiplier: 1.08, height:64, width:48 };
-    } else {
-      player.id = 'mage';
-      player.stats = { jumpPower: 16.6, speedMultiplier: 0.95, height:72, width:54 };
-    }
-    startGame();
-  });
-
-  // Start game
-  function startGame() {
-    // reset
-    selectOverlay.style.display = 'none';
-    entities.length = 0;
-    score = 0; intents = 0; frame = 0;
-    player.lane = 1; player.x = laneX[1]; player.y = groundY; player.vy = 0; player.state = 'run'; player.slideTimer = 0;
-    player.w = player.stats.width; player.h = player.stats.height;
-    gameSpeed = baseSpeed * player.stats.speedMultiplier;
-    spawnInterval = 84;
-    chaser.x = player.x - 160;
-    running = true; paused = false;
-    pauseBtn.textContent = 'Pause';
+  function startGame(){
+    score=0; coins=0; frame=0; gameSpeed=initSpeed;
+    player.lane=1; player.x=laneX[1]; player.y=groundY; player.vy=0; player.state="run";
+    entities.length=0;
+    running=true; paused=false;
+    startOverlay.style.display="none";
     loop();
   }
 
-  function gameOver() {
-    running = false;
-    // show overlay with result (re-use selectOverlay with different content)
-    const panel = selectOverlay.querySelector('#startPanel');
-    panel.querySelector('h1').textContent = 'Caught!';
-    panel.querySelector('.muted').textContent = `Score ${score} • INTENTS ${intents}`;
-    playBtn.textContent = 'Play Again';
-    selectOverlay.style.display = 'flex';
+  function gameOver(){
+    running=false;
+    startOverlay.style.display="flex";
+    startOverlay.querySelector("h1").textContent="Game Over";
+    startOverlay.querySelector("div").textContent=`Score: ${score} • Intents: ${coins}`;
+    playBtn.textContent="Play Again";
   }
 
-  // Lane movement helpers
-  function laneLeft() {
-    if (player.lane > 0 && player.state !== 'slide') {
-      player.lane--;
-      // immediate snap or smooth? we do smooth in interval
-    }
-  }
-  function laneRight() {
-    if (player.lane < laneCount-1 && player.state !== 'slide') {
-      player.lane++;
-    }
+  playBtn.addEventListener("click", startGame);
+  pauseBtn.addEventListener("click", ()=>{ if(running){ paused=!paused; pauseBtn.textContent=paused?"Resume":"Pause"; }});
+
+  // Controls
+  const keys={};
+  window.addEventListener("keydown", e=>{ keys[e.key]=true; });
+  window.addEventListener("keyup", e=>{ keys[e.key]=false; });
+
+  // Move
+  function laneLeft(){ if(player.lane>0) player.lane--; }
+  function laneRight(){ if(player.lane<2) player.lane++; }
+  function jump(){ if(player.state==="run"){ player.vy=-16; player.state="jump"; } }
+  function slide(){ if(player.state==="run"){ player.state="slide"; player.h=40; player.slideTimer=25; } }
+
+  // Spawn
+  function spawn(){
+    const lane=Math.floor(Math.random()*3), r=Math.random(), x=W+80;
+    if(r<0.6){ entities.push({type:"obstacle",lane,x,y:groundY,w:50,h:70}); }
+    else { entities.push({type:"coin",lane,x,y:groundY-80,w:30,h:30}); }
   }
 
-  // Jump / Slide
-  function tryJump() {
-    if (player.state === 'run') {
-      player.vy = -player.stats.jumpPower;
-      player.state = 'jump';
-    }
-  }
-  function trySlide() {
-    if (player.state === 'run') {
-      player.state = 'slide';
-      player.slideTimer = 22; // frames
-      player.h = Math.max(36, Math.floor(player.stats.height * 0.6));
-    }
-  }
-
-  // Basic collision check (rect)
-  function rectCollision(a, b) {
-    return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
-  }
-
-  // Spawn entities (obstacles, intents, power)
-  function spawnAhead() {
-    const lane = Math.floor(Math.random()*laneCount);
-    const spawnX = W + 80 + Math.random() * 120;
-    const r = Math.random();
-    if (r < 0.62) {
-      // obstacle
-      const h = 56 + Math.floor(Math.random()*18);
-      entities.push({ type:'obstacle', lane, x:spawnX, y: groundY - h + 8, w: 48, h: h, passed:false });
-    } else if (r < 0.95) {
-      // intents coin
-      const yoff = 60 + Math.random()*30;
-      entities.push({ type:'intents', lane, x:spawnX, y: groundY - yoff, w:44, h:44, passed:false });
-    } else {
-      // power: temporary speed slow-down or boost (we'll do boost)
-      entities.push({ type:'power', lane, x:spawnX, y: groundY - 80, w:36, h:36, passed:false });
-    }
-  }
-
-  // Main update loop
   function update(){
     frame++;
-    // keyboard quick actions (single press)
-    if (keys['ArrowLeft'] || keys['a']) { laneLeft(); keys['ArrowLeft']=false; keys['a']=false; }
-    if (keys['ArrowRight'] || keys['d']) { laneRight(); keys['ArrowRight']=false; keys['d']=false; }
-    if (keys['ArrowUp'] || keys['w'] || keys[' ']) { tryJump(); keys['ArrowUp']=false; keys['w']=false; keys[' ']=false; }
-    if (keys['ArrowDown'] || keys['s']) { trySlide(); keys['ArrowDown']=false; keys['s']=false; }
+    if(keys["ArrowLeft"]) { laneLeft(); keys["ArrowLeft"]=false; }
+    if(keys["ArrowRight"]) { laneRight(); keys["ArrowRight"]=false; }
+    if(keys["ArrowUp"]||keys[" "]) { jump(); keys["ArrowUp"]=keys[" "]=false; }
+    if(keys["ArrowDown"]) { slide(); keys["ArrowDown"]=false; }
 
-    // physics for player
-    player.y += player.vy;
-    player.vy += gravity;
-    if (player.y >= groundY) {
-      player.y = groundY; player.vy = 0;
-      if (player.state === 'jump') player.state = 'run';
-    }
+    // physics
+    player.y+=player.vy; player.vy+=1;
+    if(player.y>=groundY){ player.y=groundY; player.vy=0; if(player.state==="jump") player.state="run"; }
+    if(player.state==="slide"){ player.slideTimer--; if(player.slideTimer<=0){ player.state="run"; player.h=70; } }
 
-    // slide timer
-    if (player.state === 'slide') {
-      player.slideTimer--;
-      if (player.slideTimer <= 0) {
-        player.state = 'run';
-        player.h = player.stats.height;
+    // smooth lane move
+    player.x += (laneX[player.lane]-player.x)*0.3;
+
+    // entities move
+    for(let i=entities.length-1;i>=0;i--){
+      const e=entities[i]; e.x-=gameSpeed;
+      if(e.x<-50){ entities.splice(i,1); continue; }
+      // collision
+      if(e.lane===player.lane && Math.abs(e.x-player.x)<40 && Math.abs((e.y-player.h)-(player.y-player.h))<50){
+        if(e.type==="obstacle"){ gameOver(); return; }
+        if(e.type==="coin"){ coins++; score+=20; entities.splice(i,1); }
       }
     }
 
-    // entities movement (simulate world scroll: entities move leftwards)
-    for (let i = entities.length - 1; i >= 0; i--) {
-      const e = entities[i];
-      // Entities move horizontally based on gameSpeed and a small per-entity variation
-      e.x -= gameSpeed * (1 + (e.type === 'power' ? 0.04 : 0));
-      // remove off-screen
-      if (e.x + e.w < -40) { entities.splice(i,1); continue; }
+    if(frame%70===0) spawn();
+    score+=Math.floor(gameSpeed*0.5);
+    if(frame%300===0) gameSpeed+=0.15;
 
-      // collision detection when in same lane & overlaps X
-      const playerRect = { x: player.x - player.w/2, y: player.y - player.h, w: player.w, h: player.h };
-      const entRect = { x: e.x - e.w/2, y: e.y - e.h, w: e.w, h: e.h };
-
-      if (!e.passed && e.lane === player.lane && rectCollision(playerRect, entRect)) {
-        if (e.type === 'intents') {
-          intents += 1;
-          score += 12;
-          e.passed = true;
-          entities.splice(i,1);
-        } else if (e.type === 'power') {
-          // apply speed boost for a time
-          const prev = gameSpeed;
-          gameSpeed += 1.8;
-          setTimeout(() => { gameSpeed = Math.max(baseSpeed * player.stats.speedMultiplier, gameSpeed - 1.8); }, 2600);
-          e.passed = true;
-          entities.splice(i,1);
-        } else if (e.type === 'obstacle') {
-          // if sliding and obstacle height tall => maybe pass
-          if (player.state === 'slide' && e.h > 60) {
-            // slide under - success
-            score += 6;
-            entities.splice(i,1);
-          } else if (player.state === 'jump' && player.y < groundY - 28) {
-            // jumped over
-            score += 10;
-            entities.splice(i,1);
-          } else {
-            // hit -> game over
-            gameOver();
-            return;
-          }
-        }
-      }
-    }
-
-    // spawn logic
-    spawnTimer++;
-    if (spawnTimer >= spawnInterval) {
-      spawnTimer = 0;
-      spawnAhead();
-      // gradually make it tougher
-      if (frame % 1200 === 0 && spawnInterval > 48) spawnInterval -= 6;
-    }
-
-    // scoring and progressive speed increase
-    score += Math.floor(gameSpeed * 0.12);
-    if (frame % 360 === 0) {
-      gameSpeed += 0.08;
-    }
-
-    // chaser movement: slowly close but keep behind
-    const desiredChaserX = player.x - 128;
-    if (chaser.x < desiredChaserX) chaser.x += (desiredChaserX - chaser.x) * 0.04 + 0.5;
-    else chaser.x = Math.min(chaser.x, desiredChaserX);
-
-    // if chaser reaches player -> game over
-    if (player.x - chaser.x < 44) { gameOver(); return; }
-
-    // HUD
-    scoreEl.textContent = score;
-    coinsEl.textContent = intents;
-    spdEl.textContent = (gameSpeed / baseSpeed).toFixed(2);
+    scoreEl.textContent=score;
+    coinsEl.textContent=coins;
+    spdEl.textContent=(gameSpeed/initSpeed).toFixed(2);
   }
 
-  // Render everything
   function render(){
-    // clear
     ctx.clearRect(0,0,W,H);
 
-    // background: subtle horizon
-    const grad = ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0, '#a6e6ff');
-    grad.addColorStop(0.7, '#66b0e6');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,W,H);
+    // ground
+    ctx.fillStyle="#444"; ctx.fillRect(0,groundY+30,W,H-groundY);
+    // tracks
+    ctx.strokeStyle="#666"; ctx.lineWidth=3;
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(laneX[i],0); ctx.lineTo(laneX[i],H); ctx.stroke(); }
 
-    // distant city shapes
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#083047';
-    ctx.fillRect(18, H - 420, 64, 180);
-    ctx.fillRect(120, H - 370, 94, 220);
-    ctx.fillRect(260, H - 400, 80, 240);
-    ctx.restore();
-
-    // ground & rails
-    ctx.fillStyle = '#2e2e2e';
-    ctx.fillRect(0, groundY + 56, W, H - (groundY+56));
-    for (let i=0;i<laneCount;i++){
-      const x = laneX[i];
-      ctx.fillStyle = 'rgba(0,0,0,0.06)';
-      ctx.fillRect(x - W*0.22, groundY + 24, W*0.44, 8);
-      ctx.fillStyle = '#555';
-      ctx.fillRect(x - W*0.22, groundY + 28, W*0.44, 6);
-    }
-
-    // draw entities
-    for (const e of entities) {
-      const ex = e.x;
-      const ey = e.y;
-      if (e.type === 'intents') {
-        // draw coin with text 'INTENTS'
-        // coin shadow
-        ctx.beginPath();
-        ctx.ellipse(ex+6, ey+8, e.w/2 + 4, e.h/2 + 4, 0, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fill(); ctx.closePath();
-
-        // coin body
-        ctx.beginPath();
-        ctx.ellipse(ex, ey, e.w/2, e.h/2, 0, 0, Math.PI*2);
-        ctx.fillStyle = '#ffcf47'; ctx.fill(); ctx.closePath();
-
-        // edge
-        ctx.beginPath();
-        ctx.ellipse(ex, ey, e.w/2 - 3, e.h/2 - 3, 0, 0, Math.PI*2);
-        ctx.fillStyle = '#ffd86b'; ctx.fill(); ctx.closePath();
-
-        // text "INTENTS" (fit)
-        ctx.fillStyle = '#5b3a00';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        // draw small 'INT' top and 'ENTS' bottom to fit
-        ctx.fillText('INT', ex, ey - 6);
-        ctx.fillText('ENTS', ex, ey + 6);
-      } else if (e.type === 'power') {
-        // little blue box with bolt
-        ctx.fillStyle = '#6ec6ff';
-        ctx.fillRect(ex - e.w/2, ey - e.h, e.w, e.h);
-        ctx.fillStyle = '#fff';
-        ctx.font = '18px sans-serif';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('⚡', ex, ey - e.h/2 + 2);
-      } else if (e.type === 'obstacle') {
-        // crate / obstacle box
-        ctx.fillStyle = '#8b5e3c';
-        ctx.fillRect(ex - e.w/2, ey - e.h, e.w, e.h);
-        // detail
-        ctx.fillStyle = '#6b4a34';
-        ctx.fillRect(ex - e.w/2 + 6, ey - e.h + 10, e.w - 12, Math.min(12, e.h - 20));
+    // entities
+    for(const e of entities){
+      if(e.type==="obstacle"){ ctx.fillStyle="#8B5E3C"; ctx.fillRect(e.x-25,e.y-70,50,70); }
+      else if(e.type==="coin"){
+        ctx.beginPath(); ctx.arc(e.x,e.y,15,0,Math.PI*2); ctx.fillStyle="#FFD54A"; ctx.fill();
+        ctx.fillStyle="#000"; ctx.font="10px Arial"; ctx.textAlign="center"; ctx.fillText("INTENTS",e.x,e.y+3);
       }
     }
 
-    // draw player at player's x & y
-    const px = player.x;
-    const py = player.y;
-    ctx.save();
-    // body
-    if (player.id === 'shrimp') {
-      // shrimp-style: long horizontal body, coral color
-      ctx.translate(px, py - player.h/2);
-      ctx.fillStyle = '#ff6b6b';
-      ctx.beginPath();
-      ctx.ellipse(0, 6, player.w/2, player.h/2.4, Math.PI/10, 0, Math.PI*2);
-      ctx.fill(); ctx.closePath();
+    // player
+    if(selectedChar==="shrimp"){ drawShrimpChar(player.x,player.y); }
+    else { drawMageChar(player.x,player.y); }
+  }
 
-      // tail
-      ctx.fillStyle = '#ff4a4a';
-      ctx.beginPath();
-      ctx.moveTo(player.w/2 - 6, 0);
-      ctx.lineTo(player.w/2 + 12, -6);
-      ctx.lineTo(player.w/2 + 12, 12);
-      ctx.closePath();
-      ctx.fill();
-
-      // eye
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(-6, -player.h/2 + 14, 6, 6);
-
-    } else {
-      // red mage: vertical robe and hat
-      ctx.translate(px, py - player.h/2);
-      // robe
-      ctx.fillStyle = '#c83a3a';
-      ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
-      // belt
-      ctx.fillStyle = '#6b2a2a';
-      ctx.fillRect(-player.w/2, 6, player.w, 8);
-      // hat (triangular)
-      ctx.beginPath();
-      ctx.moveTo(-player.w/2 - 6, -player.h/2 + 10);
-      ctx.lineTo(0, -player.h/2 - 22);
-      ctx.lineTo(player.w/2 + 6, -player.h/2 + 10);
-      ctx.closePath();
-      ctx.fillStyle = '#9b1f1f';
-      ctx.fill();
-      // face
-      ctx.fillStyle = '#ffdcb4';
-      ctx.fillRect(-10, -player.h/2 + 10, 20, 14);
-    }
-
-    // state indicator: slide shadow
-    if (player.state === 'slide') {
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
-      ctx.fillRect(-player.w/2, player.h/4, player.w, 10);
-    }
-
+  function drawShrimpChar(x,y){
+    ctx.save(); ctx.translate(x,y-35);
+    ctx.fillStyle="#ff6f61"; ctx.beginPath(); ctx.ellipse(0,0,25,18,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(12,-4,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#000"; ctx.beginPath(); ctx.arc(12,-4,2,0,Math.PI*2); ctx.fill();
     ctx.restore();
-
-    // draw chaser behind
-    ctx.fillStyle = '#111';
-    ctx.fillRect(chaser.x - chaser.w/2, chaser.y - chaser.h, chaser.w, chaser.h);
-    ctx.fillStyle = '#ffeb3b';
-    ctx.font = '20px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('👮', chaser.x, chaser.y - chaser.h/2 + 6);
-
-    // subtle HUD top bar
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    ctx.fillRect(0,0,W,44);
+  }
+  function drawMageChar(x,y){
+    ctx.save(); ctx.translate(x,y-35);
+    ctx.fillStyle="#ff3860"; ctx.fillRect(-20,-35,40,70);
+    ctx.fillStyle="#fff"; ctx.fillRect(-8,-25,6,6); ctx.fillRect(2,-25,6,6);
+    ctx.fillStyle="#800000"; ctx.beginPath(); ctx.moveTo(0,-60); ctx.lineTo(25,-35); ctx.lineTo(-25,-35); ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
 
-  // Main loop
-  function loop() {
-    if (!running) return;
-    if (!paused) {
-      update();
-      render();
-    }
-    requestAnimationFrame(loop);
-  }
-
-  // Smooth lane tracking for player
-  setInterval(() => {
-    if (!running || paused) return;
-    const targetX = laneX[player.lane];
-    player.x += (targetX - player.x) * 0.28;
-  }, 16);
-
-  // Keyboard quick jump/slide mapping
-  window.addEventListener('keydown', (e) => {
-    if (!running) return;
-    if (['ArrowUp','w',' '].includes(e.key)) tryJump();
-    if (['ArrowDown','s'].includes(e.key)) trySlide();
-  });
-
-  // intentionally load initial selection highlight
-  selectChar(selectedChar);
-
-  // expose to console for debugging
-  window.__intentRunner = { startGame, player, entities, spawnAhead };
-
-  // initial render while on selection overlay
-  render();
-
+  function loop(){ if(!running) return; if(!paused){ update(); render(); } requestAnimationFrame(loop); }
 })();
 </script>
 </body>
