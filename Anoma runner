@@ -7,7 +7,7 @@
 <style>
   html,body { height:100%; margin:0; background:#0c0c0c; font-family:"Segoe UI",sans-serif; }
   #gameWrap { width:480px; max-width:95vw; margin:auto; position:relative; }
-  canvas { display:block; background: linear-gradient(#6FD1FF, #C1EFFF); border-radius:14px; touch-action:none; }
+  canvas { display:block; background:#6FD1FF; border-radius:14px; touch-action:none; }
   #hud { position:absolute; top:10px; left:10px; display:flex; gap:12px; align-items:center; }
   .pill { background:rgba(0,0,0,.5); padding:6px 10px; border-radius:10px; color:#fff; font-weight:bold; }
   #pauseBtn { background:#ff3860; border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; }
@@ -106,6 +106,11 @@
   const player = { lane:1, x:laneX[1], y:groundY, vy:0, w:50, h:70, state:"run", slideTimer:0 };
   const entities = [];
 
+  // Parallax background layers
+  const clouds=[], buildings=[];
+  for(let i=0;i<5;i++){ clouds.push({x:i*200,y:80+Math.random()*60}); }
+  for(let i=0;i<6;i++){ buildings.push({x:i*120,y:groundY-200+Math.random()*50,h:150+Math.random()*80}); }
+
   function startGame(){
     score=0; coins=0; frame=0; gameSpeed=initSpeed;
     player.lane=1; player.x=laneX[1]; player.y=groundY; player.vy=0; player.state="run"; player.h=70;
@@ -126,7 +131,7 @@
   playBtn.addEventListener("click", startGame);
   pauseBtn.addEventListener("click", ()=>{ if(running){ paused=!paused; pauseBtn.textContent=paused?"Resume":"Pause"; }});
 
-  // Controls (PC)
+  // Controls
   const keys={};
   window.addEventListener("keydown", e=>{ keys[e.key]=true; });
   window.addEventListener("keyup", e=>{ keys[e.key]=false; });
@@ -136,7 +141,7 @@
   function jump(){ if(player.state==="run"){ player.vy=-16; player.state="jump"; } }
   function slide(){ if(player.state==="run"){ player.state="slide"; player.h=40; player.slideTimer=25; } }
 
-  // Controls (Mobile swipe)
+  // Mobile swipe
   let touchStartX=0, touchStartY=0;
   canvas.addEventListener("touchstart", e=>{
     const t=e.touches[0]; touchStartX=t.clientX; touchStartY=t.clientY;
@@ -190,13 +195,29 @@
     scoreEl.textContent=score;
     coinsEl.textContent=coins;
     spdEl.textContent=(gameSpeed/initSpeed).toFixed(2);
+
+    // move parallax
+    clouds.forEach(c=>{ c.x-=gameSpeed*0.3; if(c.x<-200) c.x=W+200; });
+    buildings.forEach(b=>{ b.x-=gameSpeed*0.6; if(b.x<-120) b.x=W+120; });
   }
 
   function render(){
     ctx.clearRect(0,0,W,H);
 
+    // sky
+    ctx.fillStyle="#6FD1FF"; ctx.fillRect(0,0,W,H);
+
+    // clouds
+    ctx.fillStyle="#fff";
+    for(const c of clouds){ ctx.beginPath(); ctx.arc(c.x,c.y,30,0,Math.PI*2); ctx.fill(); }
+
+    // buildings
+    ctx.fillStyle="#2e3a59";
+    for(const b of buildings){ ctx.fillRect(b.x,groundY-b.h,b.h/3,b.h); }
+
     // ground
     ctx.fillStyle="#444"; ctx.fillRect(0,groundY+30,W,H-groundY);
+
     // tracks
     ctx.strokeStyle="#666"; ctx.lineWidth=3;
     for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(laneX[i],0); ctx.lineTo(laneX[i],H); ctx.stroke(); }
